@@ -3,11 +3,14 @@ from modules import shared, errors
 import modules.scripts as scripts
 from functools import lru_cache
 from heapq import nlargest
+from pathlib import Path
 from PIL import Image
 import gradio as gr
 import os
 
 allowed_ext = ('.png', '.jpg', '.jpeg', '.webp', '.avif')
+allowed_dir_setting_keys = ['outdir_img2img_samples', 'outdir_txt2img_samples', 'outdir_samples']
+
 
 shared.options_templates.update(shared.options_section(('quick_recent', 'Quick recent'), {
     'quick_recent_total_recent_img': shared.OptionInfo(
@@ -48,19 +51,33 @@ def get_gallery_images(is_img2img):
     return [create_fake_image(img_path) for img_path in get_recent_images(shared.opts.quick_recent_total_recent_img, is_img2img)]
 
 
-def update_params(evt: gr.SelectData, images):
+def test_allowed_dir(path: Path):
+    path = path.resolve()
+    for k in allowed_dir_setting_keys:
+        parent = getattr(shared.opts, k).strip()
+        if parent:
+            parent = Path(parent).resolve()
+            if path.is_relative_to(parent):
+                return True
+    return False
+
+
+def update_params(image):
     # index of the image in the gallery from evt
     # images is the list of images in the gallery from the webpage
     # image_path contains separator '?', needs to be removed
     try:
-        image, q, timestamp = images[evt.index]['name'].rpartition('?')
-        image_path = image if q else timestamp
+        if isinstance(image, list):
+            image = image[0][0]
+        image, q, timestamp = image.rpartition('?')
+        image_path = Path(image if q else timestamp)
+        assert image_path.is_file(), f'File not found: {image_path}'
+        assert test_allowed_dir(image_path), f'File not in allowed directories: {image_path}'
         with Image.open(image_path) as img:
-            metadata = img.info
-        return metadata.get('parameters', '')
+            return img.info.get('parameters', '')
     except Exception:
         errors.report("Error reading image parameters", exc_info=True)
-        return ''
+    return ''
 
 
 class QuickRecentsScript(scripts.Script):
@@ -100,12 +117,19 @@ class QuickRecentsScript(scripts.Script):
                     object_fit='contain',
                     allow_preview=False,
                     format='png',
+                    elem_id=self.elem_id('quick_recent_gallery'),
+                #     script_txt2img_quick_recents_quick_recent_gallery
                 )
 
                 gallery.select(
                     fn=update_params,
-                    inputs=gallery,
-                    outputs=generation_info
+                    # _js=f'(i, images) => [get_quick_recent_gallery_selected_index("{self.elem_id("quick_recent_gallery")}", images)]',
+                    _js=f'(images) => get_quick_recent_gallery_selected_index("{self.elem_id("quick_recent_gallery")}", images)',
+                    inputs=[
+                        gallery
+                    ],
+                    outputs=generation_info,
+
                 )
                 refresh.click(lambda: get_gallery_images(is_img2img), outputs=[gallery])
                 block.load(lambda: get_gallery_images(is_img2img), outputs=[gallery])
