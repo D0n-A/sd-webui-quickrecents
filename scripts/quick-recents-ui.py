@@ -90,7 +90,6 @@ class QuickRecentsScript(scripts.Script):
         super().__init__()
         self.recent_images = []
         self.num_img = shared.opts.quick_recent_total_recent_img
-        self.num_cols = shared.opts.quick_recent_img_per_row
 
     def title(self):
         return "Quick Recents"
