@@ -14,11 +14,11 @@ allowed_dir_setting_keys = ['outdir_img2img_samples', 'outdir_txt2img_samples', 
 
 shared.options_templates.update(shared.options_section(('quick_recent', 'Quick recent'), {
     'quick_recent_total_recent_img': shared.OptionInfo(
-        8, 'Total recent Images to show in quick recent gallery',
+        8, 'Total number of images to show in quick recent gallery',
         gr.Number, {'minimum': 1, 'maximum': 1000, 'precision': 0}
     ),
     'quick_recent_img_per_row': shared.OptionInfo(
-        2, 'Image per row in quick recent gallery',
+        2, 'Images per row in quick recent gallery',
         gr.Number, {'minimum': 1, 'maximum': 50, 'precision': 0}
     ).needs_reload_ui(),
 }))
@@ -81,7 +81,7 @@ def update_params(image):
 
 
 class QuickRecentsScript(scripts.Script):
-    # So the tap appears at the top
+    # So the tab appears at the top
     sorting_priority = -5
 
     def __init__(self):
@@ -117,6 +117,7 @@ class QuickRecentsScript(scripts.Script):
                     object_fit='contain',
                     allow_preview=False,
                     format='png',
+                    interactive=False,
                     elem_id=self.elem_id('quick_recent_gallery'),
                 #     script_txt2img_quick_recents_quick_recent_gallery
                 )
