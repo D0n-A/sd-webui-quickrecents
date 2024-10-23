@@ -75,31 +75,33 @@ class QuickRecentsScript(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
-        generation_info = gr.Textbox(visible=False)
+        with gr.Blocks(analytics_enabled=False) as block:
+            generation_info = gr.Textbox(visible=False)
 
-        with gr.Accordion('Quick Recents', open=False):
-            with gr.Row():
-                apply = gr.Button('Apply', scale=19)
-                parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
-                    paste_button=apply,
-                    tabname="txt2img" if not is_img2img else "img2img",
-                    source_text_component=generation_info
-                ))
-                refresh = gr.Button('\U0001f504', scale=1)
+            with gr.Accordion('Quick Recents', open=False):
+                with gr.Row():
+                    apply = gr.Button('Apply', scale=19)
+                    parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
+                        paste_button=apply,
+                        tabname="txt2img" if not is_img2img else "img2img",
+                        source_text_component=generation_info
+                    ))
+                    refresh = gr.Button('\U0001f504', scale=1)
 
-            gallery = gr.Gallery(
-                value=get_gallery_images(self.num_img, is_img2img),
-                show_label=False,
-                columns=self.num_cols,
-                rows=self.num_rows,
-                object_fit='contain',
-                allow_preview=False,
-                format='png',
-            )
+                gallery = gr.Gallery(
+                    value=None,
+                    show_label=False,
+                    columns=self.num_cols,
+                    rows=self.num_rows,
+                    object_fit='contain',
+                    allow_preview=False,
+                    format='png',
+                )
 
-            gallery.select(
-                fn=update_params,
-                inputs=gallery,
-                outputs=generation_info
-            )
-            refresh.click(lambda: get_gallery_images(self.num_img, is_img2img), outputs=gallery)
+                gallery.select(
+                    fn=update_params,
+                    inputs=gallery,
+                    outputs=generation_info
+                )
+                refresh.click(lambda: get_gallery_images(self.num_img, is_img2img), outputs=[gallery])
+                block.load(lambda: get_gallery_images(self.num_img, is_img2img), outputs=[gallery])
