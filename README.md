@@ -3,7 +3,7 @@ Extension for stable diffusion webui to view recent generations and get their ge
 
 ![til](https://raw.githubusercontent.com/MINENEMA/sd-webui-quickrecents/main/example.gif)
 
-Only tested on webui-forge but should work for base automatic1111 aswell   
+- Quick recent gallery image number and column count can be configured under `Settings > Quick recent` section
+
 Todo:
- * Customization (num of images, settings tab)
  * Ability to only paste certain parameters (ex: prompt only)
