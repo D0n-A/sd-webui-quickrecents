@@ -9,6 +9,17 @@ import os
 
 allowed_ext = ('.png', '.jpg', '.jpeg', '.webp', '.avif')
 
+shared.options_templates.update(shared.options_section(('quick_recent', 'Quick recent'), {
+    'quick_recent_total_recent_img': shared.OptionInfo(
+        8, 'Total recent Images to show in gallery',
+        gr.Number, {'minimum': 1, 'maximum': 50}
+    ).needs_reload_ui(),
+    'quick_recent_img_per_row': shared.OptionInfo(
+        2, 'Image per row in gallery',
+        gr.Number, {'minimum': 1, 'maximum': 50}
+    ).needs_reload_ui(),
+}))
+
 
 @lru_cache(maxsize=128)
 def create_fake_image(img_path):
@@ -53,10 +64,9 @@ class QuickRecentsScript(scripts.Script):
     def __init__(self):
         super().__init__()
         self.recent_images = []
-        self.num_img = 8
-        self.num_cols = 2
+        self.num_img = shared.opts.quick_recent_total_recent_img
+        self.num_cols = shared.opts.quick_recent_img_per_row
         self.num_rows = (self.num_img + self.num_cols - 1) // self.num_cols
-        self.is_img2img = None
 
     def title(self):
         return "Quick Recents"
@@ -65,7 +75,6 @@ class QuickRecentsScript(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
-        self.is_img2img = is_img2img
         generation_info = gr.Textbox(visible=False)
 
         with gr.Accordion('Quick Recents', open=False):
