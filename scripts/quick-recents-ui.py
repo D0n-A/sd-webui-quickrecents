@@ -4,10 +4,26 @@ import gradio as gr
 import os
 from heapq import nlargest
 from pathlib import Path
-from modules import shared
-import shutil
-import tempfile
+from modules import shared, errors
 from PIL import Image
+from functools import lru_cache
+
+
+@lru_cache(maxsize=128)
+def read_image(img_path):
+    with Image.open(img_path) as img:
+        img.already_saved_as = img_path
+        return img
+
+
+def read_images(img_paths):
+    images = []
+    for img in img_paths:
+        try:
+            images.append(read_image(img))
+        except Exception:
+            errors.report(f"Error reading image {img}", exc_info=True)
+    return images
 
 
 class QuickRecentsScript(scripts.Script):
@@ -27,16 +43,6 @@ class QuickRecentsScript(scripts.Script):
             png_files = (str(Path(root) / file) for root, _, files in os.walk(txt2img_dir) for file in files if file.endswith('.png'))
             recent_files = nlargest(n, png_files, key=os.path.getmtime)
             return recent_files
-
-        # To avoid gradio caching issues
-        def cache_files(file_paths):
-            cache_dir = tempfile.gettempdir()
-            cached_files = []
-            for file_path in file_paths:
-                dest_path = Path(cache_dir) / Path(file_path).name
-                shutil.copy(file_path, dest_path)
-                cached_files.append(str(dest_path))
-            return cached_files
 
         num_img = 8
         num_cols = 2
@@ -73,4 +79,4 @@ class QuickRecentsScript(scripts.Script):
             )
 
             gallery.select(update_params, outputs=generation_info)
-            refresh.click(lambda: cache_files(get_recent(num_img)), outputs=gallery)
+            refresh.click(lambda: read_images(get_recent(num_img)), outputs=gallery)
