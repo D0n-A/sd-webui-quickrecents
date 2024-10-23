@@ -18,8 +18,8 @@ shared.options_templates.update(shared.options_section(('quick_recent', 'Quick r
         gr.Number, {'minimum': 1, 'maximum': 1000, 'precision': 0}
     ),
     'quick_recent_img_min_width': shared.OptionInfo(
-        '8vw', 'Gallery Image minimum width', gr.Textbox,
-    ).info("<a href='https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Values_and_units#lengths' target='_blank'>Accepts CSS length units.</a> Examples: '160px', '10rem', '8vw' (default)").needs_reload_ui(),
+        '10rem', 'Gallery Image minimum width', gr.Textbox,
+    ).info("<a href='https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Values_and_units#lengths' target='_blank'>Accepts CSS length units.</a> Examples: '160px', '8vw', '10rem' (default)").needs_reload_ui(),
 }))
 
 # set the default value min width gallery grid to --quick-recent-img-min-width CSS root variable
