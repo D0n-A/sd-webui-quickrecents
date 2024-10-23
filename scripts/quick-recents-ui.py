@@ -17,11 +17,13 @@ shared.options_templates.update(shared.options_section(('quick_recent', 'Quick r
         8, 'Total number of images to show in quick recent gallery',
         gr.Number, {'minimum': 1, 'maximum': 1000, 'precision': 0}
     ),
-    'quick_recent_img_per_row': shared.OptionInfo(
-        2, 'Images per row in quick recent gallery',
-        gr.Number, {'minimum': 1, 'maximum': 50, 'precision': 0}
-    ).needs_reload_ui(),
+    'quick_recent_img_min_width': shared.OptionInfo(
+        '10rem', 'Gallery Image minimum width', gr.Textbox,
+    ).info("<a href='https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Values_and_units#lengths' target='_blank'>Accepts CSS length units.</a> Examples: '160px', '8vw', '10rem' (default)").needs_reload_ui(),
 }))
+
+# set the default value min width gallery grid to --quick-recent-img-min-width CSS root variable
+shared.gradio_theme.quick_recent_img_min_width = shared.opts.quick_recent_img_min_width
 
 
 @lru_cache(maxsize=2048)
@@ -44,7 +46,7 @@ def get_recent_images(n, is_img2img):
     # Crawl through txt/img2img directories to find recent images
     # if specified webui will output to outdir_samples first before using txt/img2img's own directories
     img_dir = shared.opts.outdir_samples or (shared.opts.outdir_img2img_samples if is_img2img else shared.opts.outdir_txt2img_samples)
-    return nlargest(n, scan_images(img_dir), key=os.path.getmtime)
+    return nlargest(int(n), scan_images(img_dir), key=os.path.getmtime)
 
 
 def get_gallery_images(is_img2img):
@@ -88,7 +90,6 @@ class QuickRecentsScript(scripts.Script):
         super().__init__()
         self.recent_images = []
         self.num_img = shared.opts.quick_recent_total_recent_img
-        self.num_cols = shared.opts.quick_recent_img_per_row
 
     def title(self):
         return "Quick Recents"
@@ -113,18 +114,16 @@ class QuickRecentsScript(scripts.Script):
                 gallery = gr.Gallery(
                     value=None,
                     show_label=False,
-                    columns=self.num_cols,
                     object_fit='contain',
                     allow_preview=False,
-                    format='png',
+                    format='pil',
                     interactive=False,
                     elem_id=self.elem_id('quick_recent_gallery'),
-                #     script_txt2img_quick_recents_quick_recent_gallery
+                    elem_classes=['quick-recent-gallery'],
                 )
 
                 gallery.select(
                     fn=update_params,
-                    # _js=f'(i, images) => [get_quick_recent_gallery_selected_index("{self.elem_id("quick_recent_gallery")}", images)]',
                     _js=f'(images) => get_quick_recent_gallery_selected_index("{self.elem_id("quick_recent_gallery")}", images)',
                     inputs=[
                         gallery
