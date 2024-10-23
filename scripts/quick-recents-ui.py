@@ -12,13 +12,13 @@ allowed_ext = ('.png', '.jpg', '.jpeg', '.webp', '.avif')
 allowed_dir_setting_keys = ['outdir_img2img_samples', 'outdir_txt2img_samples', 'outdir_samples']
 
 
-shared.options_templates.update(shared.options_section(('quick_recent', 'Quick recent'), {
+shared.options_templates.update(shared.options_section(('quick_recent', 'Quick Recents'), {
     'quick_recent_total_recent_img': shared.OptionInfo(
-        8, 'Total number of images to show in quick recent gallery',
+        12, 'Total number of images to show in quick recent gallery',
         gr.Number, {'minimum': 1, 'maximum': 1000, 'precision': 0}
     ),
     'quick_recent_img_min_width': shared.OptionInfo(
-        '10rem', 'Gallery Image minimum width', gr.Textbox,
+        '12rem', 'Gallery Image minimum width', gr.Textbox,
     ).info("<a href='https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Values_and_units#lengths' target='_blank'>Accepts CSS length units.</a> Examples: '160px', '8vw', '10rem' (default)").needs_reload_ui(),
 }))
 
