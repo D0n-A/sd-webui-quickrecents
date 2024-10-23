@@ -1,0 +1,3 @@
+.quick-recent-gallery .grid-container {
+    grid-template-columns: repeat(auto-fit, minmax(var(--quick-recent-img-min-width), 1fr)) !important;
+}
