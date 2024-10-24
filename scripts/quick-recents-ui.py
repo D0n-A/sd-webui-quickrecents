@@ -116,7 +116,6 @@ class QuickRecentsScript(scripts.Script):
                     show_label=False,
                     object_fit='contain',
                     allow_preview=False,
-                    format='pil',
                     interactive=False,
                     elem_id=self.elem_id('quick_recent_gallery'),
                     elem_classes=['quick-recent-gallery'],
