@@ -5,4 +5,4 @@ Extension for stable diffusion webui to view recent generations and get their ge
 
 Configurable in `Settings > Quick Recents`  
 - Quick recent gallery image number and image size 
-- Option to paste only certain parameters (e.g., prompt only)
+- Option to disregard certain parameters
