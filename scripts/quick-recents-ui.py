@@ -1,5 +1,5 @@
 import modules.infotext_utils as parameters_copypaste
-from modules import shared, errors
+from modules import shared, shared_items, errors, ui_components
 import modules.scripts as scripts
 from functools import lru_cache
 from heapq import nlargest
@@ -7,10 +7,10 @@ from pathlib import Path
 from PIL import Image
 import gradio as gr
 import os
+import re
 
 allowed_ext = ('.png', '.jpg', '.jpeg', '.webp', '.avif')
 allowed_dir_setting_keys = ['outdir_img2img_samples', 'outdir_txt2img_samples', 'outdir_samples']
-
 
 shared.options_templates.update(shared.options_section(('quick_recent', 'Quick Recents'), {
     'quick_recent_total_recent_img': shared.OptionInfo(
@@ -20,6 +20,7 @@ shared.options_templates.update(shared.options_section(('quick_recent', 'Quick R
     'quick_recent_img_min_width': shared.OptionInfo(
         '12rem', 'Gallery Image minimum width', gr.Textbox,
     ).info("<a href='https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Values_and_units#lengths' target='_blank'>Accepts CSS length units.</a> Examples: '160px', '8vw', '10rem' (default)").needs_reload_ui(),
+    "quick_recent_skip_pasting": shared.OptionInfo([], "Parameter fields to disregard when applying quick recent", ui_components.DropdownMulti, lambda: {"choices": shared_items.get_infotext_names() + ["Sampler", "Schedule type", "Size"]}),
 }))
 
 # set the default value min width gallery grid to --quick-recent-img-min-width CSS root variable
@@ -69,6 +70,9 @@ def update_params(image):
     # images is the list of images in the gallery from the webpage
     # image_path contains separator '?', needs to be removed
     try:
+        # Retrieve the selected options for skipping parameters
+        skip_params = shared.opts.quick_recent_skip_pasting
+        
         if isinstance(image, list):
             image = image[0][0]
         image, q, timestamp = image.rpartition('?')
@@ -76,7 +80,13 @@ def update_params(image):
         assert image_path.is_file(), f'File not found: {image_path}'
         assert test_allowed_dir(image_path), f'File not in allowed directories: {image_path}'
         with Image.open(image_path) as img:
-            return img.info.get('parameters', '')
+            parameters = img.info.get('parameters', '')
+            if 'Prompt' in skip_params:
+                # Prompts are formatted differently so this looks for its endpoint (Steps/Negative Prompt) then deletes above it
+                parameters = re.sub(r'^.*?(?=\b(Steps|Negative Prompt):)', '', parameters, flags=re.DOTALL)
+            for param in skip_params:
+                parameters = parameters.replace(f"{param}:", "")
+            return parameters
     except Exception:
         errors.report("Error reading image parameters", exc_info=True)
     return ''
