@@ -10,9 +10,10 @@ import os
 import re
 
 allowed_ext = ('.png', '.jpg', '.jpeg', '.webp', '.avif')
-allowed_dir_setting_keys = ['outdir_img2img_samples', 'outdir_txt2img_samples', 'outdir_samples']
+allowed_dir_setting_keys = ['outdir_img2img_samples', 'outdir_txt2img_samples', 'outdir_samples', 'outdir_img2img_grids', 'outdir_txt2img_grids', 'outdir_grids']
 
 shared.options_templates.update(shared.options_section(('quick_recent', 'Quick Recents'), {
+    'quick_recent_include_grids': shared.OptionInfo(False, 'Include grid outputs in quick recent',gr.Checkbox),
     'quick_recent_total_recent_img': shared.OptionInfo(
         12, 'Total number of images to show in quick recent gallery',
         gr.Number, {'minimum': 1, 'maximum': 1000, 'precision': 0}
@@ -20,18 +21,17 @@ shared.options_templates.update(shared.options_section(('quick_recent', 'Quick R
     'quick_recent_img_min_width': shared.OptionInfo(
         '12rem', 'Gallery Image minimum width', gr.Textbox,
     ).info("<a href='https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Values_and_units#lengths' target='_blank'>Accepts CSS length units.</a> Examples: '160px', '8vw', '10rem' (default)").needs_reload_ui(),
-    "quick_recent_skip_pasting": shared.OptionInfo([], "Parameter fields to disregard when applying quick recent", ui_components.DropdownMulti, lambda: {"choices": shared_items.get_infotext_names() + ["Sampler", "Schedule type", "Size"]}),
+    'quick_recent_skip_pasting': shared.OptionInfo([], 'Parameter fields to disregard when applying quick recent', ui_components.DropdownMulti, lambda: {'choices': shared_items.get_infotext_names() + ['Sampler', 'Schedule type', 'Size']}),
 }))
 
 # set the default value min width gallery grid to --quick-recent-img-min-width CSS root variable
 shared.gradio_theme.quick_recent_img_min_width = shared.opts.quick_recent_img_min_width
 
-
 @lru_cache(maxsize=2048)
 def create_fake_image(img_path):
     # create a fake image of 1x1 to send to gradio
     # Image.already_saved_as is a custom attribute of Webui to prevent gradio temp file creation
-    fake_image = Image.new(mode="RGB", size=(1, 1))
+    fake_image = Image.new(mode='RGB', size=(1, 1))
     fake_image.already_saved_as = img_path
     return fake_image
 
@@ -47,7 +47,13 @@ def get_recent_images(n, is_img2img):
     # Crawl through txt/img2img directories to find recent images
     # if specified webui will output to outdir_samples first before using txt/img2img's own directories
     img_dir = shared.opts.outdir_samples or (shared.opts.outdir_img2img_samples if is_img2img else shared.opts.outdir_txt2img_samples)
-    return nlargest(int(n), scan_images(img_dir), key=os.path.getmtime)
+    all_images = list(scan_images(img_dir))
+    
+    if shared.opts.quick_recent_include_grids:
+        grid_dir = shared.opts.outdir_grids or (shared.opts.outdir_img2img_grids if is_img2img else shared.opts.outdir_txt2img_grids)
+        all_images.extend(scan_images(grid_dir))
+    
+    return nlargest(int(n), all_images, key=os.path.getmtime)
 
 
 def get_gallery_images(is_img2img):
@@ -85,10 +91,10 @@ def update_params(image):
                 # Prompts are formatted differently so this looks for its endpoint (Steps/Negative Prompt) then deletes above it
                 parameters = re.sub(r'^.*?(?=\b(Steps|Negative Prompt):)', '', parameters, flags=re.DOTALL)
             for param in skip_params:
-                parameters = parameters.replace(f"{param}:", "")
+                parameters = parameters.replace(f'{param}:', '')
             return parameters
     except Exception:
-        errors.report("Error reading image parameters", exc_info=True)
+        errors.report('Error reading image parameters', exc_info=True)
     return ''
 
 
@@ -102,7 +108,7 @@ class QuickRecentsScript(scripts.Script):
         self.num_img = shared.opts.quick_recent_total_recent_img
 
     def title(self):
-        return "Quick Recents"
+        return 'Quick Recents'
 
     def show(self, is_img2img):
         return scripts.AlwaysVisible
@@ -116,7 +122,7 @@ class QuickRecentsScript(scripts.Script):
                     apply = gr.Button('Apply', scale=19)
                     parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
                         paste_button=apply,
-                        tabname="txt2img" if not is_img2img else "img2img",
+                        tabname='txt2img' if not is_img2img else 'img2img',
                         source_text_component=generation_info
                     ))
                     refresh = gr.Button('\U0001f504', scale=1)
